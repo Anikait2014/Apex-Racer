@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX RACER</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #080d18;
+  color: white;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  user-select: none;
+}
+
+.game {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 34px;
+  letter-spacing: 5px;
+  color: #42c9ff;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #71839e;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-bottom: 18px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  background: #142238;
+  border: 1px solid #293c58;
+  padding: 14px;
+  border-radius: 13px;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  color: #8da2bd;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.track-container {
+  position: relative;
+}
+
+canvas {
+  width: 100%;
+  display: block;
+  background: #252b31;
+  border: 2px solid #35475e;
+  border-radius: 15px;
+  touch-action: none;
+}
+
+.keyboard-help {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(5, 12, 25, 0.88);
+  border: 1px solid #42c9ff;
+  border-radius: 10px;
+  padding: 12px;
+  color: white;
+  font-size: 11px;
+  line-height: 2;
+  text-align: left;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.keyboard-help strong {
+  color: #42c9ff;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.controls button {
+  flex: 1;
+  padding: 17px;
+  font-size: 23px;
+  color: white;
+  background: #1b2d46;
+  border: 1px solid #344d6d;
+  border-radius: 13px;
+  touch-action: none;
+}
+
+.controls button:active {
+  background: #2876a9;
+}
+
+.nitro {
+  background: #154b68 !important;
+  color: #54d9ff !important;
+}
+
+.start-screen {
+  position: fixed;
+  inset: 0;
+  background: #050b16ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  padding: 20px;
+}
+
+.panel {
+  background: #142238;
+  border: 1px solid #34516e;
+  border-radius: 22px;
+  padding: 30px;
+  width: 100%;
+  max-width: 350px;
+}
+
+.panel h2 {
+  color: #42c9ff;
+  font-size: 29px;
+  margin-bottom: 12px;
+}
+
+.panel p {
+  color: #a9bad0;
+  line-height: 1.7;
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+.panel button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 11px;
+  background: #42c9ff;
+  color: #071321;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.hint {
+  color: #7588a3;
+  font-size: 11px;
+  margin-top: 15px;
+  line-height: 1.7;
+}
+
+@media(max-width: 350px) {
+  .keyboard-help {
+    font-size: 9px;
+    padding: 8px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+  <h1>APEX RACER</h1>
+  <div class="subtitle">ARCADE RACING EXPERIENCE</div>
+
+  <div class="stats">
+
+    <div>
+      <div class="stat-label">SCORE</div>
+      <div class="stat-value" id="score">0</div>
+    </div>
+
+    <div>
+      <div class="stat-label">SPEED</div>
+      <div class="stat-value" id="speed">100</div>
+    </div>
+
+    <div>
+      <div class="stat-label">BEST</div>
+      <div class="stat-value" id="best">0</div>
+    </div>
+
+  </div>
+
+  <div class="track-container">
+
+    <canvas id="gameCanvas" width="420" height="650"></canvas>
+
+    <div class="keyboard-help">
+      <strong>⌨ CONTROLS</strong><br>
+      ← / A : LEFT<br>
+      → / D : RIGHT<br>
+      SPACE : NITRO
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button id="left">◀</button>
+    <button class="nitro" id="nitro">⚡</button>
+    <button id="right">▶</button>
+  </div>
+
+  <div class="hint">
+    KEYBOARD: ← → OR A D<br>
+    DODGE TRAFFIC AND SURVIVE!
+  </div>
+
+</div>
+
+<div class="start-screen" id="startScreen">
+
+  <div class="panel">
+    <h2 id="panelTitle">APEX RACER</h2>
+
+    <p id="panelText">
+      Dodge traffic, activate nitro and chase the highest score.
+      How long can you survive?
+    </p>
+
+    <button id="startButton">START RACING</button>
+  </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const $ = id => document.getElementById(id);
+
+const roadLeft = 55;
+const roadRight = 365;
+const roadWidth = roadRight - roadLeft;
+const laneWidth = roadWidth / 3;
+
+let player;
+let traffic = [];
+
+let score = 0;
+let speed = 100;
+let roadOffset = 0;
+let spawnTimer = 0;
+
+let running = false;
+let lastTime = 0;
+
+let nitroActive = false;
+let nitroAmount = 100;
+
+let keys = {
+  left: false,
+  right: false
+};
+
+let best = Number(localStorage.getItem("apexBest")) || 0;
+
+$("best").textContent = best;
+
+const weatherTypes = ["#f44336", "#ffb52e", "#a56bff", "#e5e9f0", "#32b8a6", "#e75c9d"];
+
+function resetGame() {
+
+  player = {
+    lane: 1,
+    x: roadLeft + laneWidth * 1.5,
+    y: 520,
+    width: 42,
+    height: 76
+  };
+
+  traffic = [];
+  score = 0;
+  speed = 100;
+  roadOffset = 0;
+  spawnTimer = 0;
+  nitroAmount = 100;
+  nitroActive = false;
+
+  updateStats();
+}
+
+function updateStats() {
+  $("score").textContent = Math.floor(score);
+  $("speed").textContent = Math.floor(speed);
+  $("best").textContent = best;
+}
+
+function roundedRect(x, y, w, h, r, color) {
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+}
+
+function drawRoad() {
+
+  ctx.fillStyle = "#172b22";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#30353c";
+  ctx.fillRect(roadLeft, 0, roadWidth, H);
+
+  ctx.fillStyle = "#e9e9e9";
+  ctx.fillRect(roadLeft, 0, 5, H);
+  ctx.fillRect(roadRight - 5, 0, 5, H);
+
+  ctx.fillStyle = "#d9dce0";
+
+  for (let lane = 1; lane <= 2; lane++) {
+
+    const x = roadLeft + lane * laneWidth;
+
+    for (let y = -70; y < H; y += 110) {
+      ctx.fillRect(x - 3, y + roadOffset, 6, 55);
+    }
+  }
+
+  for (let y = -50; y < H; y += 55) {
+
+    const offset = (y + roadOffset) % (H + 55);
+
+    ctx.fillStyle = "#f3f3f3";
+    ctx.fillRect(roadLeft - 12, offset, 7, 25);
+
+    ctx.fillStyle = "#ff3d4d";
+    ctx.fillRect(roadRight + 5, offset, 7, 25);
+  }
+}
+
+function drawCar(x, y, color, isPlayer = false) {
+
+  const w = 42;
+  const h = 76;
+
+  roundedRect(x - 22, y + 12, 7, 18, 3, "#080b10");
+  roundedRect(x + 15, y + 12, 7, 18, 3, "#080b10");
+  roundedRect(x - 22, y + 49, 7, 18, 3, "#080b10");
+  roundedRect(x + 15, y + 49, 7, 18, 3, "#080b10");
+
+  roundedRect(x - w / 2, y, w, h, 9, color);
+
+  roundedRect(x - 15, y + 17, 30, 38, 6, "#182433");
+
+  roundedRect(x - 13, y + 20, 26, 13, 3, "#6da7c7");
+  roundedRect(x - 13, y + 38, 26, 13, 3, "#416b88");
+
+  roundedRect(x - 17, y + 3, 9, 5, 2, "#fff4b0");
+  roundedRect(x + 8, y + 3, 9, 5, 2, "#fff4b0");
+
+  roundedRect(x - 17, y + 67, 9, 5, 2, "#ff263d");
+  roundedRect(x + 8, y + 67, 9, 5, 2, "#ff263d");
+
+  if (isPlayer) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("YOU", x, y + 63);
+  }
+}
+
+function drawTraffic() {
+  traffic.forEach(car => {
+    drawCar(car.x, car.y, car.color);
+  });
+}
+
+function spawnTraffic() {
+
+  const lane = Math.floor(Math.random() * 3);
+
+  const blocked = traffic.some(car =>
+    car.lane === lane && car.y < 160
+  );
+
+  if (blocked) return;
+
+  traffic.push({
+
+    lane: lane,
+    x: roadLeft + laneWidth * (lane + 0.5),
+    y: -100,
+    width: 42,
+    height: 76,
+    color: weatherTypes[
+      Math.floor(Math.random() * weatherTypes.length)
+    ]
+
+  });
+}
+
+function movePlayer() {
+
+  if (keys.left && player.lane > 0) {
+    player.lane--;
+    keys.left = false;
+  }
+
+  if (keys.right && player.lane < 2) {
+    player.lane++;
+    keys.right = false;
+  }
+
+  const targetX =
+    roadLeft + laneWidth * (player.lane + 0.5);
+
+  player.x += (targetX - player.x) * 0.22;
+}
+
+function collision(a, b) {
+
+  return (
+    Math.abs(a.x - b.x) < 34 &&
+    Math.abs(
+      (a.y + a.height / 2) -
+      (b.y + b.height / 2)
+    ) < 57
+  );
+}
+
+function endGame() {
+
+  running = false;
+
+  if (Math.floor(score) > best) {
+    best = Math.floor(score);
+    localStorage.setItem("apexBest", best);
+  }
+
+  updateStats();
+
+  $("panelTitle").textContent = "RACE OVER!";
+
+  $("panelText").innerHTML =
+    "Your score: <b>" + Math.floor(score) +
+    "</b><br>Best score: <b>" + best +
+    "</b><br><br>Ready for another race?";
+
+  $("startButton").textContent = "RACE AGAIN";
+
+  $("startScreen").classList.remove("hidden");
+}
+
+function update(delta) {
+
+  if (!running) return;
+
+  const dt = Math.min(delta / 16.67, 2);
+
+  const boosting = nitroActive && nitroAmount > 0;
+
+  if (boosting) {
+    nitroAmount -= 0.7 * dt;
+  } else {
+    nitroAmount = Math.min(100, nitroAmount + 0.16 * dt);
+  }
+
+  const baseSpeed = 5 + Math.min(score / 400, 7);
+
+  const gameSpeed = boosting
+    ? baseSpeed * 1.65
+    : baseSpeed;
+
+  speed = boosting
+    ? 220 + Math.min(score / 20, 100)
+    : 100 + Math.min(score / 30, 100);
+
+  roadOffset += gameSpeed * dt;
+
+  if (roadOffset > 110) roadOffset = 0;
+
+  score += gameSpeed * dt * 0.12;
+
+  movePlayer();
+
+  spawnTimer += delta;
+
+  const spawnDelay = Math.max(430, 1050 - score * 0.7);
+
+  if (spawnTimer > spawnDelay) {
+    spawnTraffic();
+    spawnTimer = 0;
+  }
+
+  for (let i = traffic.length - 1; i >= 0; i--) {
+
+    const car = traffic[i];
+
+    car.y += gameSpeed * dt;
+
+    if (collision(player, car)) {
+      endGame();
+      return;
+    }
+
+    if (car.y > H + 100) {
+      traffic.splice(i, 1);
+    }
+  }
+
+  updateStats();
+}
+
+function draw() {
+
+  ctx.clearRect(0, 0, W, H);
+
+  drawRoad();
+  drawTraffic();
+
+  if (player) {
+    drawCar(player.x, player.y, "#19a8ff", true);
+  }
+
+  ctx.fillStyle = "#111b29";
+  ctx.fillRect(105, 12, 210, 13);
+
+  ctx.fillStyle = "#42c9ff";
+  ctx.fillRect(105, 12, 210 * nitroAmount / 100, 13);
+
+  ctx.fillStyle = "white";
+  ctx.font = "bold 11px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("NITRO", 210, 39);
+
+  if (nitroAmount <= 0) {
+    ctx.fillStyle = "#ffbd50";
+    ctx.fillText("NITRO EMPTY", 210, 55);
+  }
+}
+
+function gameLoop(timestamp) {
+
+  const delta = lastTime
+    ? timestamp - lastTime
+    : 16.67;
+
+  lastTime = timestamp;
+
+  update(delta);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+
+  resetGame();
+  running = true;
+  lastTime = 0;
+
+  $("startScreen").classList.add("hidden");
+}
+
+// KEYBOARD CONTROLS
+
+document.addEventListener("keydown", event => {
+
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", " "].includes(event.key)) {
+    event.preventDefault();
+  }
+
+  if (!running) return;
+
+  if (event.key === "ArrowLeft" || event.key.toLowerCase() === "a") {
+    keys.left = true;
+  }
+
+  if (event.key === "ArrowRight" || event.key.toLowerCase() === "d") {
+    keys.right = true;
+  }
+
+  if (event.key === "ArrowUp" || event.key === " ") {
+    nitroActive = true;
+  }
+});
+
+document.addEventListener("keyup", event => {
+
+  if (event.key === "ArrowUp" || event.key === " ") {
+    nitroActive = false;
+  }
+});
+
+// TOUCHSCREEN CONTROLS
+
+function bindButton(id, action) {
+
+  const button = $(id);
+
+  button.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (!running) return;
+    action(true);
+  });
+
+  button.addEventListener("pointerup", event => {
+    event.preventDefault();
+    action(false);
+  });
+
+  button.addEventListener("pointerleave", () => {
+    action(false);
+  });
+
+  button.addEventListener("pointercancel", () => {
+    action(false);
+  });
+}
+
+bindButton("left", value => {
+  if (value) keys.left = true;
+});
+
+bindButton("right", value => {
+  if (value) keys.right = true;
+});
+
+bindButton("nitro", value => {
+  nitroActive = value;
+});
+
+$("startButton").addEventListener("click", startGame);
+
+// START
+
+resetGame();
+requestAnimationFrame(gameLoop);
+
+</script>
+
+</body>
+</html>
